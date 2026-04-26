@@ -1,0 +1,19 @@
+logreg:
+  C: [0.01, 0.1, 1, 10]
+  penalty: ['l1', 'l2']
+  solver: ['liblinear', 'saga']
+
+rf:
+  n_estimators: [100, 300, 500]
+  max_depth: [None, 10, 20]
+  min_samples_split: [2, 5, 10]
+  min_samples_leaf: [1, 2, 4]
+  max_features: ['sqrt', 'log2']
+
+xgboost:
+  n_estimators: [100, 200, 300]
+  learning_rate: [0.01, 0.1, 0.3]
+  max_depth: [3, 6, 10]
+  subsample: [0.6, 0.9]
+  colsample_bytree: [0.6, 0.9]
+  min_child_weight: [1, 5]

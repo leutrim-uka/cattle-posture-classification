@@ -1,0 +1,126 @@
+# ============================================================================
+# TRAIN-ON-ALL-DATA PIPELINE CONFIGURATION
+# ============================================================================
+# This config defines hyperparameters for training on complete 2024 data
+# and evaluating on held-out 2025 data
+# Evaluates temporal generalization: does the model trained on 2024 perform on future 2025 data?
+
+# DATA LOADING & PREPROCESSING
+# ============================================================================
+
+# Path to training data CSV file (typically 2024 data)
+# The model is trained on all observations from this dataset
+# Default: ./data/FINAL_merged_collar_herde_weather_bolus.csv
+train_data_path: ./data/FINAL_merged_collar_herde_weather_bolus.csv
+
+# Path to test data CSV file (typically 2025 data - future observations)
+# The model is evaluated (not trained) on this held-out dataset
+# Tests temporal generalization: can 2024-trained model predict 2025 behavior?
+# Default: ./data/2025_merged_collar_herde_bolus_weather.csv
+test_data_path: ./data/2025_merged_collar_herde_bolus_weather.csv
+
+# Feature set to use based on predefined experiment combinations
+# Each experiment_no refers to a feature set defined in core/experiments.py
+# Default: 8
+experiment_no: 8
+
+# Strategy for selecting which cows are used in the test set
+# Options:
+#   "new_cows_test": Only cows NEW to 2025 (not in 2024 training set)
+#                    Tests generalization to completely unseen individuals
+#   "recurring_cows_test": Only cows that REPEAT in both 2024 and 2025
+#                          Tests within-subject generalization over time
+#   "recurring_cows_to_training": Move 2025's recurring cows INTO training set,
+#                                 test only on completely new cows
+#                                 Maximizes training data from repeated subjects
+# Default: "new_cows_test"
+test_cow_selection_strategy: new_cows_test
+
+# Strategy for handling missing/NaN values in the dataset
+# Options:
+#   "keep": Retain rows with missing values (NaN remains in features)
+#   "drop": Remove entire rows containing any NaN values
+# Default: "keep"
+missing_strategy: keep
+
+# Whether to remove outlier rows from the training data
+# Uses IQR (Interquartile Range) method: removes rows outside 1.5*IQR per class
+# Options: true, false
+# Default: false
+remove_outliers: false
+
+# FEATURE ENGINEERING
+# ============================================================================
+
+# Enable automatic feature engineering (computes derived features like Age, IMU_total, rolling differences)
+# When true, additional engineered features are computed and added to the feature set
+# Options: true, false
+# Default: false
+feature_engineering: false
+
+# Drop original features after engineering new ones
+# Only relevant if feature_engineering: true
+# When true: keeps only engineered features, removes originals
+# Options: true, false
+# Default: false
+drop_original_features: false
+
+# OUTPUT DIRECTORY
+# ============================================================================
+
+# Root directory where results (models, predictions, metrics) will be stored
+# Final structure: <out_dir>/<suffix>/train/, test/, preds/, aggregate_metrics.json
+# Default: ./data/final_results/final_experiment/FINAL/
+out_dir: ./data/final_results/final_experiment/FINAL/
+
+# MODEL HYPERPARAMETERS
+# ============================================================================
+
+# XGBoost hyperparameters used for model training
+# These are the "best" parameters, typically from prior hyperparameter tuning
+best_params:
+  # Loss function for binary classification
+  # Options: "binary:logistic" (probability output), "binary:logitraw" (raw score)
+  # Default: "binary:logistic"
+  objective: binary:logistic
+  
+  # Subsample ratio of columns when constructing each tree
+  # Reduces overfitting by training each tree on a random subset of features
+  # Options: float 0.0-1.0 (1.0 = use all features)
+  # Default: 0.9
+  colsample_bytree: 0.9
+  
+  # Evaluation metric for model selection during training
+  # Options: "logloss" (binary crossentropy), "error" (classification error rate)
+  # Default: "logloss"
+  eval_metric: logloss
+  
+  # Learning rate (shrinkage) for gradient boosting
+  # Controls step size along gradient; lower values = slower learning but better regularization
+  # Options: float typically 0.01-0.5
+  # Default: 0.1
+  learning_rate: 0.1
+  
+  # Maximum depth of each decision tree
+  # Deeper trees capture more complex patterns but risk overfitting
+  # Options: integer >= 1
+  # Default: 3
+  max_depth: 3
+  
+  # Number of boosting rounds (trees to sequentially build)
+  # More trees generally improve performance but increase computation time and overfitting risk
+  # Options: integer >= 1
+  # Default: 300
+  n_estimators: 300
+  
+  # Random seed for reproducibility
+  # Ensures the same random initialization across runs
+  # Options: integer
+  # Default: 42
+  random_state: 42
+  
+  # Subsample ratio of training samples when constructing each tree
+  # Reduces overfitting by training each tree on a random subset of observations
+  # Options: float 0.0-1.0 (1.0 = use all data)
+  # Default: 0.9
+  subsample: 0.9

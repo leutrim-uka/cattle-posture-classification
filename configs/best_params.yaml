@@ -1,0 +1,9 @@
+xgboost:
+  objective: 'binary:logistic'
+  colsample_bytree: 0.9
+  eval_metric: 'logloss'
+  learning_rate: 0.1
+  max_depth: 3
+  n_estimators: 300
+  random_state: 42
+  subsample: 0.9

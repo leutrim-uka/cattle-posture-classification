@@ -1,0 +1,97 @@
+# ============================================================================
+# LSTM (LONG SHORT-TERM MEMORY) PIPELINE CONFIGURATION
+# ============================================================================
+# This config defines hyperparameters for training LSTM sequence models
+# with optional attention mechanism across multiple random seeds
+
+# DATA LOADING & PREPROCESSING
+# ============================================================================
+
+# Path to input data CSV file
+# Should contain time-series sequential data with labels
+# Default: ./data/FINAL_merged_collar_herde_weather_bolus.csv
+data_path: ./data/FINAL_merged_collar_herde_weather_bolus.csv
+
+# Feature set to use based on predefined experiment combinations
+# Each experiment_no refers to a feature set defined in core/experiments.py
+# Default: 4
+experiment_no: 4
+
+# Strategy for handling missing/NaN values in the dataset
+# Options:
+#   "keep": Retain rows with missing values (NaN remains in features)
+#   "drop": Remove entire rows containing any NaN values
+# Default: "keep"
+missing_strategy: keep
+
+# Whether to remove outlier rows from the training data
+# Uses IQR (Interquartile Range) method: removes rows outside 1.5*IQR per class
+# Options: true, false
+# Default: false
+remove_outliers: false
+
+# FEATURE ENGINEERING
+# ============================================================================
+
+# Enable automatic feature engineering (computes derived features like Age, IMU_total, rolling differences)
+# When true, additional engineered features are computed and added to the feature set
+# Options: true, false
+# Default: false
+feature_engineering: false
+
+# Drop original features after engineering new ones
+# Only relevant if feature_engineering: true
+# When true: keeps only engineered features, removes originals
+# Options: true, false
+# Default: false
+drop_original_features: false
+
+# LSTM-SPECIFIC OPTIONS
+# ============================================================================
+
+# Indicator flag for LSTM pipeline (internal use)
+# Must remain true for LSTM preprocessing
+# Options: true
+# Default: true
+is_lstm: true
+
+# Whether to use LSTM with attention mechanism
+# Standard LSTM: processes sequences and outputs final hidden state
+# Attention LSTM: learns to focus on important timesteps via attention weights
+# Options: true, false
+# Default: false
+attention: false
+
+# DATA SPLITTING
+# ============================================================================
+
+# Fraction of data reserved for testing (held-out evaluation set)
+# Rest is split into train and validation sets
+# Options: float between 0.0 and 1.0
+# Default: 0.2
+test_size: 0.2
+
+# Fraction of remaining data after test split used for validation
+# Validation set monitors overfitting during training (early stopping)
+# Formula: train_size = (1 - test_size) * (1 - val_size)
+# Options: float between 0.0 and 1.0
+# Default: 0.1
+val_size: 0.1
+
+# MULTI-SEED TRAINING
+# ============================================================================
+
+# Starting seed for model training randomization
+# Defines the beginning of the range [seed_start, seed_end)
+# Different seeds initialize weights differently each run
+# Allows multiple independent attempts to evaluate model stability
+# Options: integer
+# Default: 42
+seed_start: 42
+
+# Ending seed for model training randomization (exclusive)
+# Each seed in [seed_start, seed_end) trains an independent model
+# Range size typically: 10-20 runs to ensure robust performance estimates
+# Options: integer (> seed_start)
+# Default: 52 (generates 10 models: seeds 42-51)
+seed_end: 52

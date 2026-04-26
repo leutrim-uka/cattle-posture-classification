@@ -1,0 +1,123 @@
+# ============================================================================
+# LOGO (LEAVE-ONE-GROUP-OUT) PIPELINE CONFIGURATION
+# ============================================================================
+# This config defines hyperparameters for Leave-One-Group-Out evaluation
+# where each cow is held out once for testing (per-cow cross-validation)
+# Training uses XGBoost with the specified best_params
+
+# DATA LOADING & PREPROCESSING
+# ============================================================================
+
+# Path to input data CSV file
+# Options: CWB_2024.csv, CW_FULL_COHORT_2024.csv, etc.
+# Default: ./data/CWB_2024.csv (collar + weather + bolus data 2024)
+data_path: ./data/CWB_2024.csv
+
+
+# Feature set to use based on predefined experiment combinations
+# Each experiment_no refers to a feature set defined in core/experiments.py
+# 1: Collar only (movement features)
+# 3: Collar + Weather (movement + weather features)
+# 4: Collar + Bolus (movement + bolus features)
+# 5: Collar + Weather + Bolus (movement + weather + bolus features)
+experiment_no: 1
+
+# Strategy for handling missing/NaN values in the dataset
+# Options:
+#   "keep": Retain rows with missing values (NaN remains in features)
+#   "drop": Remove entire rows containing any NaN values
+# Default: "keep"
+missing_strategy: keep
+
+# Whether to remove outlier rows from the training data
+# Uses IQR (Interquartile Range) method: removes rows outside 1.5*IQR per class
+# Options: true, false
+# Default: false
+remove_outliers: false
+
+# FEATURE ENGINEERING
+# ============================================================================
+
+# Enable automatic feature engineering (computes derived features like Age, IMU_total, rolling differences)
+# When true, additional engineered features are computed and added to the feature set
+# Options: true, false
+# Default: false
+feature_engineering: false
+
+# Drop original features after engineering new ones
+# Only relevant if feature_engineering: true
+# When true: keeps only engineered features, removes originals
+# Options: true, false
+# Default: false
+drop_original_features: false
+
+# Apply Markov chain smoothing to predictions (first-order HMM smoothing)
+# Useful for temporal sequences where transitions between states are limited
+# Options: true, false
+# Default: false
+use_markov: false
+
+# LOGO-SPECIFIC OPTIONS
+# ============================================================================
+
+# Normalize IMU (Inertial Measurement Unit) features per individual cow
+# When true: IMU readings (IMU_40, IMU_80, etc.) are normalized within each cow's data
+# This corrects for individual differences in sensor calibration/mounting
+# Affects output directory: "logo_cownorm" (true) vs "logo" (false)
+# Options: true, false
+# Default: false
+cow_normalize_imu: false
+
+# MODEL HYPERPARAMETERS
+# ============================================================================
+
+# NOTE: These hyperparameters were the best parameters found during grouped evaluation; reused to reduce computational cost of hyperparameter tuning for LOGO evaluation.
+
+# XGBoost hyperparameters used for LOGO evaluation
+# These are the "best" parameters, typically from prior hyperparameter tuning
+best_params:
+  # Loss function for binary classification
+  # Options: "binary:logistic" (probability output), "binary:logitraw" (raw score)
+  # Default: "binary:logistic"
+  objective: binary:logistic
+  
+  # Subsample ratio of columns when constructing each tree
+  # Reduces overfitting by training each tree on a random subset of features
+  # Options: float 0.0-1.0 (1.0 = use all features)
+  # Default: 0.9
+  colsample_bytree: 0.9
+  
+  # Evaluation metric for model selection during training
+  # Options: "logloss" (binary crossentropy), "error" (classification error rate)
+  # Default: "logloss"
+  eval_metric: logloss
+  
+  # Learning rate (shrinkage) for gradient boosting
+  # Controls step size along gradient; lower values = slower learning but better regularization
+  # Options: float typically 0.01-0.5
+  # Default: 0.1
+  learning_rate: 0.1
+  
+  # Maximum depth of each decision tree
+  # Deeper trees capture more complex patterns but risk overfitting
+  # Options: integer >= 1
+  # Default: 3
+  max_depth: 3
+  
+  # Number of boosting rounds (trees to sequentially build)
+  # More trees generally improve performance but increase computation time and overfitting risk
+  # Options: integer >= 1
+  # Default: 300
+  n_estimators: 300
+  
+  # Random seed for reproducibility
+  # Ensures the same random initialization across runs
+  # Options: integer
+  # Default: 42
+  random_state: 42
+  
+  # Subsample ratio of training samples when constructing each tree
+  # Reduces overfitting by training each tree on a random subset of observations
+  # Options: float 0.0-1.0 (1.0 = use all data)
+  # Default: 0.9
+  subsample: 0.9

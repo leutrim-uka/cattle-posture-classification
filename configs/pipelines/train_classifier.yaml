@@ -1,0 +1,141 @@
+# ============================================================================
+# CLASSIFIER PIPELINE CONFIGURATION
+# ============================================================================
+# This config defines hyperparameters for training posture classification models
+# using various classical ML algorithms (XGBoost, RandomForest, LogisticRegression, etc.)
+
+# DATA LOADING & PREPROCESSING
+# ============================================================================
+
+# Path to input data CSV file
+# Options: CWB_2024.csv, CWB_2025.csv, CW_FULL_COHORT_2024.csv, CW_FULL_COHORT_2025.csv
+# Default: ./data/CWB_2024.csv (collar + weather + bolus data 2024)
+data_path: ./data/CWB_2024.csv
+
+# Feature set to use based on predefined experiment combinations
+# Each experiment_no refers to a feature set defined in core/experiments.py
+# 1: Collar only (movement features)
+# 3: Collar + Weather (movement + weather features)
+# 4: Collar + Bolus (movement + bolus features)
+# 5: Collar + Weather + Bolus (movement + weather + bolus features)
+experiment_no: 5
+
+# Strategy for handling missing/NaN values in the dataset
+# Options:
+#   "keep": Retain rows with missing values (NaN remains in features)
+#   "drop": Remove entire rows containing any NaN values
+# Default: "keep"
+missing_strategy: keep
+
+# Whether to remove outlier rows from the training data
+# Uses IQR (Interquartile Range) method: removes rows outside 1.5*IQR per class
+# Note: Removing outliers artificially makes the task easier by removing hard samples
+# Options: true, false
+# Default: false
+remove_outliers: false
+
+# FEATURE ENGINEERING
+# ============================================================================
+
+# Enable automatic feature engineering (computes derived features like Age, IMU_total, rolling differences)
+# When true, additional engineered features are computed and added to the feature set
+# Options: true, false
+# Default: false
+feature_engineering: false
+
+# Drop original features after engineering new ones
+# Only relevant if feature_engineering: true
+# When true: keeps only engineered features, removes originals for cleaner feature space
+# Options: true, false
+# Default: false
+drop_original_features: false
+
+# Apply Markov chain smoothing to predictions (first-order HMM smoothing)
+# Useful for temporal sequences where transitions between states are limited
+# Options: true, false
+# Default: false
+use_markov: false
+
+# TRAIN/TEST SPLITTING
+# ============================================================================
+
+# Fraction of data reserved for testing during each train/test split
+# Used only when split_strategy: "grouped" (not used for CV)
+# Options: float between 0.0 and 1.0
+# Default: 0.2 (80% train, 20% test)
+test_size: 0.2
+
+# PRIMARY EVALUATION STRATEGY (Choose one approach)
+# ============================================================================
+
+# Cross-validation method for model evaluation
+# Options:
+#   "random": Uses k-fold stratified cross-validation on observations
+#             Each observation appears exactly once in a test set across all folds
+#             Helps identify model generalization ability
+#   "grouped": Uses repeated holdout with different random seeds
+#             Each seed creates a new random train/test split
+#             Helps identify robustness across varying data configurations
+# Default: "random"
+split_strategy: random
+
+# CROSS-VALIDATION PARAMETERS (for split_strategy: "random")
+# ============================================================================
+
+# Number of folds for stratified k-fold cross-validation
+# Options: integer >= 2 (typically 3, 5, or 10)
+# Default: 5
+random_cv_folds: 5
+
+# Random seed for stratified k-fold splitting (ensures reproducibility)
+# Options: integer
+# Default: 42
+random_cv_seed: 42
+
+# GROUPED (REPEATED HOLDOUT) PARAMETERS (for split_strategy: "grouped")
+# ============================================================================
+
+# Starting seed for grouped train/test split range
+# Defines the beginning of the range [grouped_seed_start, grouped_seed_end)
+# Options: integer
+# Default: 42
+grouped_seed_start: 42
+
+# Ending seed for grouped train/test split range (exclusive)
+# Each seed in [grouped_seed_start, grouped_seed_end) generates a new split
+# Range size typically: 10-20 runs to ensure robust estimates
+# Options: integer (> grouped_seed_start)
+# Default: 52 (generates 10 splits: seeds 42-51)
+grouped_seed_end: 52
+
+# MODEL TRAINING & HYPERPARAMETERS
+# ============================================================================
+
+# Which models to train during the pipeline
+# Supported models: xgboost, random_forest, logistic_regression.
+# Options: list of one or more model names
+# Default: ["xgboost"]
+models_to_train:
+  - xgboost
+
+# Path to hyperparameter grid file for model tuning
+# YAML file containing GridSearchCV parameter combinations for each model
+# Options: path to valid YAML file
+# Default: ./configs/parameter_grids.yaml
+param_grid_path: ./configs/parameter_grids.yaml
+
+# Number of cross-validation folds used during hyperparameter tuning (in GridSearchCV)
+# Separate from main evaluation splits; used only for model hyperparameter optimization
+# Options: integer >= 2
+# Default: 5
+cv_folds: 5
+
+# CLASS IMBALANCE HANDLING
+# ============================================================================
+
+# Apply SMOTE (Synthetic Minority Over-sampling Technique) to training data
+# Rebalances imbalanced datasets by creating synthetic minority class samples
+# Only applied to training folds during CV; test set remains unmodified
+# Options: true, false
+# Default: false
+use_smote: false
